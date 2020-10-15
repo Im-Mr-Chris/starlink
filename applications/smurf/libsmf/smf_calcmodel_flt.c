@@ -156,12 +156,12 @@ typedef struct smfCalcModelFltData {
    int ring_box2;
    int ring_minsize;
    int ring_wing;
-   size_t bstride;
-   size_t nclose;
-   size_t ndchisq;
-   size_t noibstride;
-   size_t noitstride;
-   size_t tstride;
+   dim_t bstride;
+   dim_t nclose;
+   dim_t ndchisq;
+   dim_t noibstride;
+   dim_t noitstride;
+   dim_t tstride;
    smf_qual_t *qua_data;
    unsigned char *mask;
 } SmfCalcModelFltData;
@@ -176,7 +176,7 @@ void smf_calcmodel_flt( ThrWorkForce *wf, smfDIMMData *dat, int chunk,
 
   /* Local Variables */
   dim_t bolostep;               /* Number of bolos per thread */
-  size_t bstride;               /* bolo stride */
+  dim_t bstride;               /* bolo stride */
   double dchisq=0;              /* this - last model residual chi^2 */
   int dofft;                    /* flag if we will actually do any filtering */
   int do_ringing;               /* Apply ringing filter? */
@@ -195,12 +195,12 @@ void smf_calcmodel_flt( ThrWorkForce *wf, smfDIMMData *dat, int chunk,
   double *model_data_copy=NULL; /* Copy of model_data for one bolo */
   dim_t nbolo=0;                /* Number of bolometers */
   dim_t ndata=0;                /* Total number of data points */
-  size_t ndchisq=0;             /* number of elements contributing to dchisq */
+  dim_t ndchisq=0;             /* number of elements contributing to dchisq */
   smfArray *noi=NULL;           /* Pointer to NOI at chunk */
   double *noi_data=NULL;        /* Pointer to DATA component of model */
-  size_t noibstride;            /* bolo stride for noise */
+  dim_t noibstride;            /* bolo stride for noise */
   dim_t nointslice;             /* number of time slices for noise */
-  size_t noitstride;            /* Time stride for noise */
+  dim_t noitstride;            /* Time stride for noise */
   int notfirst=0;               /* flag for delaying until after 1st iter */
   dim_t ntslice=0;              /* Number of time slices */
   int nw;                       /* Number of worker threads */
@@ -218,7 +218,7 @@ void smf_calcmodel_flt( ThrWorkForce *wf, smfDIMMData *dat, int chunk,
   double ring_nsigma;           /* Clipping limit for ringing filter */
   double ring_wing;             /* Size of wings for ringing filter */
   int skip;                     /* Number of AST models being skipped */
-  size_t tstride;               /* Time slice stride in data array */
+  dim_t tstride;               /* Time slice stride in data array */
   int undofirst = 1;            /* Undo FLT model at start of iteration? */
   int whiten;                   /* Applying whitening filter? */
   double period;                /* Period of lowest passed frequency */
@@ -464,7 +464,7 @@ void smf_calcmodel_flt( ThrWorkForce *wf, smfDIMMData *dat, int chunk,
                defined as "napod + 2*npad" samples from either end, where
                "napod" is the number of apodised samples and "npad" is the
                number of padded samples at each end. */
-            size_t npad, npad_or_apod, nclose;
+            dim_t npad, npad_or_apod, nclose;
             smf_get_goodrange( qua_data, ntslice, tstride, SMF__Q_PAD |
                                SMF__Q_APOD, &npad_or_apod, NULL, status );
             smf_get_goodrange( qua_data, ntslice, tstride, SMF__Q_PAD,
@@ -589,7 +589,7 @@ static void smf1_calcmodel_flt( void *job_data_ptr, int *status ) {
    double *pn;
    double *pr;
    int *pl;
-   size_t ibase;
+   dim_t ibase;
    smf_qual_t *pq;
 
 /* Check inherited status */

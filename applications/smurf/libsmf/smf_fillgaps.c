@@ -166,18 +166,18 @@
 /* Structure containing information about blocks of bolos to be
    filled by each thread. */
 typedef struct smfFillGapsData {
-  int ntslice;                  /* Number of time slices */
+  dim_t b1;                     /* Index of first bolometer to be filledd */
+  dim_t b2;                     /* Index of last bolometer to be filledd */
+  dim_t box;
+  dim_t bstride;                /* bolo stride */
+  dim_t minbox;
+  dim_t ntslice;                /* Number of time slices */
+  dim_t pend;                   /* Last non-PAD sample */
+  dim_t pstart;                 /* First non-PAD sample */
+  dim_t tstride;                /* time slice stride */
   double *dat;                  /* Pointer to bolo data */
   gsl_rng *r;                   /* GSL random number generator */
   int fillpad;                  /* Fill PAD samples? */
-  size_t b1;                    /* Index of first bolometer to be filledd */
-  size_t b2;                    /* Index of last bolometer to be filledd */
-  size_t bstride;               /* bolo stride */
-  size_t tstride;               /* time slice stride */
-  int box;
-  int minbox;
-  int pend;                     /* Last non-PAD sample */
-  int pstart;                   /* First non-PAD sample */
   smf_qual_t *qua;              /* Pointer to quality array */
   smf_qual_t mask;              /* Quality mask for bad samples */
 } smfFillGapsData;
@@ -185,8 +185,8 @@ typedef struct smfFillGapsData {
 
 /* Prototype for the function to be executed in each thread. */
 static void smfFillGapsParallel( void *job_data_ptr, int *status );
-static void smf1_fillgap( double *data, int pstart, int pend, size_t tstride,
-                          int jstart, int jend, gsl_rng *r, int box, int minbox,
+static void smf1_fillgap( double *data, dim_t pstart, dim_t pend, dim_t tstride,
+                          dim_t jstart, dim_t jend, gsl_rng *r, dim_t box, dim_t minbox,
                           int *status );
 
 void  smf_fillgaps( ThrWorkForce *wf, smfData *data,
@@ -194,18 +194,18 @@ void  smf_fillgaps( ThrWorkForce *wf, smfData *data,
 
 /* Local Variables */
   const gsl_rng_type *type;     /* GSL random number generator type */
+  dim_t box;
   dim_t bpt;                    /* Number of bolos per thread */
+  dim_t bstride;                /* bolo stride */
   dim_t i;                      /* Bolometer index */
+  dim_t minbox;
   dim_t nbolo;                  /* Number of bolos */
   dim_t ntslice;                /* Number of time slices */
+  dim_t pend;                   /* Last non-PAD sample */
+  dim_t pstart;                 /* First non-PAD sample */
+  dim_t tstride;                /* time slice stride */
   double *dat=NULL;             /* Pointer to bolo data */
-  int box;
-  int minbox;
   int fillpad;                  /* Fill PAD samples? */
-  size_t bstride;               /* bolo stride */
-  size_t pend;                  /* Last non-PAD sample */
-  size_t pstart;                /* First non-PAD sample */
-  size_t tstride;               /* time slice stride */
   smfFillGapsData *job_data;    /* Structures holding data for worker threads */
   smfFillGapsData *pdata;       /* Pointer to data for next worker thread */
   smf_qual_t *qua=NULL;         /* Pointer to quality array */
@@ -356,9 +356,25 @@ void  smf_fillgaps( ThrWorkForce *wf, smfData *data,
 static void smfFillGapsParallel( void *job_data_ptr, int *status ) {
 
 /* Local Variables */
+  dim_t b1;                     /* Index of first bolometer to be filledd */
+  dim_t b2;                     /* Index of last bolometer to be filledd */
+  dim_t box;
+  dim_t bstride;                /* bolo stride */
+  dim_t fillpad;                /* Fill PAD samples ? */
+  dim_t good;                   /* Were any usable input values found? */
   dim_t i;                      /* Bolometer index */
-  int j;                        /* Time-slice index */
-  int ntslice;                  /* Number of time slices */
+  dim_t j;                      /* Time-slice index */
+  dim_t jj;                     /* Time-slice index */
+  dim_t jstart;                 /* Index of first flagged sample in block */
+  dim_t leftend;                /* Index at end of left hand patch */
+  dim_t leftstart;              /* Index at start of left hand patch */
+  dim_t minbox;
+  dim_t ntslice;                /* Number of time slices */
+  dim_t pend;                   /* Last non-PAD sample */
+  dim_t pstart;                 /* First non-PAD sample */
+  dim_t rightend;               /* Index at end of right hand patch */
+  dim_t rightstart;             /* Index at start of right hand patch */
+  dim_t tstride;                /* time slice stride */
   double *dat = NULL;           /* Pointer to bolo data */
   double *pd;
   double a;                     /* Cubic interpolation coefficient */
@@ -375,30 +391,14 @@ static void smfFillGapsParallel( void *job_data_ptr, int *status ) {
   double meanr;                 /* Mean value in right patch */
   double ml;                    /* Gradient of fit at left end of block */
   double mr;                    /* Gradient of fit at right end of block */
-  double sigmal;                /* Standard deviation in left patch */
-  double sigmar;                /* Standard deviation in right patch */
   double nx2;                   /* nx squared */
   double nx;                    /* Normalised distance into interpolation */
+  double sigmal;                /* Standard deviation in left patch */
+  double sigmar;                /* Standard deviation in right patch */
   double x[ 2*BOX ];            /* Array of sample positions */
   double y[ 2*BOX ];            /* Array of sample values */
   gsl_rng *r;                   /* GSL random number generator */
-  int fillpad;                  /* Fill PAD samples ? */
-  int good;                     /* Were any usable input values found? */
-  int box;
-  int minbox;
-  int jj;                       /* Time-slice index */
-  int jstart;                   /* Index of first flagged sample in block */
   int k;                        /* Loop count */
-  int leftend;                  /* Index at end of left hand patch */
-  int leftstart;                /* Index at start of left hand patch */
-  int rightend;                 /* Index at end of right hand patch */
-  int rightstart;               /* Index at start of right hand patch */
-  size_t b1;                    /* Index of first bolometer to be filledd */
-  size_t b2;                    /* Index of last bolometer to be filledd */
-  size_t bstride;               /* bolo stride */
-  int pend;                     /* Last non-PAD sample */
-  int pstart;                   /* First non-PAD sample */
-  size_t tstride;               /* time slice stride */
   smfFillGapsData *pdata = NULL;/* Pointer to job data */
   smf_qual_t *pq;
   smf_qual_t *qua = NULL;       /* Pointer to quality array */
@@ -595,8 +595,8 @@ static void smfFillGapsParallel( void *job_data_ptr, int *status ) {
 
 
 /* Fill a single gap in a single bolometer time-stream. */
-static void smf1_fillgap( double *data, int pstart, int pend, size_t tstride,
-                          int jstart, int jend, gsl_rng *r, int box, int minbox,
+static void smf1_fillgap( double *data, dim_t pstart, dim_t pend, dim_t tstride,
+                          dim_t jstart, dim_t jend, gsl_rng *r, dim_t box, dim_t minbox,
                           int *status ){
 
 
@@ -613,11 +613,11 @@ static void smf1_fillgap( double *data, int pstart, int pend, size_t tstride,
    double vr;
    double x[ BOX ];
    double y[ BOX ];
-   int jhi;
-   int jlo;
+   dim_t jhi;
+   dim_t jlo;
+   dim_t s2;
+   dim_t jj;
    int k;
-   int s2;
-   int jj;
 
 /* Check inherited status */
    if( *status != SAI__OK ) return;
